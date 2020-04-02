@@ -1,5 +1,5 @@
-use rand::thread_rng;
-use rand_distr::{Distribution, Triangular, TriangularError};
+// use rand::thread_rng;
+// use rand_distr::{Distribution, Triangular, TriangularError};
 
 
 // fn main() -> Result<(), TriangularError> {
@@ -10,16 +10,12 @@ use rand_distr::{Distribution, Triangular, TriangularError};
 //     }
 //     Ok(())
 // }
+use pfrust::particles::{Particle, PendulumParticle};
 
-fn func() -> i32 {
-    3
-}
+fn measurement_model(state: &mut Vec<f64>) {}
 
-fn test_closures(func: impl FnOnce() -> i32) -> i32 {
-    return func();
-}
+fn process_model(state: &mut Vec<f64>) {}
 
 fn main() {
-    println!("func gives: {}", test_closures(func));    
-    println!("func gives: {}", test_closures(func));    
+    PendulumParticle::new(measurement_model, process_model);
 }
