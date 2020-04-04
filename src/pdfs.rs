@@ -24,7 +24,7 @@ pub fn multivariate_gauss_pdf(x: &Array1<f64>, mu: &Array1<f64>, sigma: &Array2<
     let pdf_val = (2.0 * PI).powf(-n / 2.0) * sigma.det()?.powf(-0.5) * (-0.5 * q).exp();
     Ok(pdf_val)
 }
-
+#[derive(Clone, Copy, Debug)]
 pub struct Triangular {
     pub max: f64,
     pub min: f64,
