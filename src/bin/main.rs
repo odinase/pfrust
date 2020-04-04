@@ -10,12 +10,10 @@
 //     }
 //     Ok(())
 // }
-use pfrust::particles::{Particle, PendulumParticle};
-
-fn measurement_model(state: &mut Vec<f64>) {}
-
-fn process_model(state: &mut Vec<f64>) {}
+use textplots::{Chart, Plot, Shape};
+use std::process::Command;
+use pfrust::particles;
 
 fn main() {
-    PendulumParticle::new(measurement_model, process_model);
+        Chart::default().lineplot( Shape::Continuous( |x| x.exp())).display();
 }
