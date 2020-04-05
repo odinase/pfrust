@@ -3,6 +3,9 @@ use ndarray::prelude::*;
 use ndarray_linalg::error::LinalgError;
 use ndarray_linalg::solve::{Determinant, Solve};
 use std::f64::consts::PI;
+use rand_distr::{Distribution};
+use rand_distr;
+use rand::thread_rng;
 
 pub type Result = std::result::Result<f64, PdfError>;
 
@@ -26,9 +29,24 @@ pub fn multivariate_gauss_pdf(x: &Array1<f64>, mu: &Array1<f64>, sigma: &Array2<
 }
 #[derive(Clone, Copy, Debug)]
 pub struct Triangular {
+    density: rand_distr::Triangular<f64>,
     pub max: f64,
     pub min: f64,
     pub mode: f64,
+}
+
+impl Triangular {
+    pub fn new(min: f64, max: f64, mode: f64) -> Self {
+        Triangular{
+            min,
+            max,
+            mode,
+            density: rand_distr::Triangular::new(min, max, mode).unwrap(),
+        }
+    }
+    pub fn sample(&self) -> f64 {
+        self.density.sample(&mut thread_rng())
+    }
 }
 
 impl Pdf for Triangular {   

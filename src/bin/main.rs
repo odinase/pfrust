@@ -1,19 +1,32 @@
-use pfrust::particles::pendulum;
-use pfrust::particle_filter::ParticleFilter;
+use gnuplot::*;
 use ndarray::prelude::*;
+use ndarray::Array;
+use ndarray_rand::rand_distr::Normal;
+use ndarray_rand::RandomExt;
+use pfrust::particle_filter::ParticleFilter;
+use pfrust::particles::pendulum;
+use rosrust;
+use rosrust_msg;
+use std::f64::consts::PI;
+use std::thread::sleep;
+use std::time::Duration;
 
 fn main() {
-    let mm = pendulum::MeasurementModel::new(-5.0, 5.0, 0.0, 0.1, 0.1, 1.0);
-    let pm = pendulum::ProcessModel::new(9.81, 1.0, 0.0, 1.0_f64);
-    let init_state : Array1<f64> = arr1(&[0.0, 0.0]);
-    let p = pendulum::PendulumParticle::new(init_state, mm, pm);
-    let p_vec : Vec<pendulum::PendulumParticle> = (0..10).map(|_| p.clone()).collect();
-    println!("p_vec: {:#?}", p_vec);
-    let mut pf = ParticleFilter::new(p_vec);
-    println!("pf {:#?}", pf);
-    let input: Array1<f64> = arr1(&[0.0, 0.1]);
-    let measurement: f64 = 0.5;
-    pf.predict(&input);
-    pf.update(&measurement);
-    println!("pf {:#?}", pf);
+    // println!("This is a silly example of doing an animation... Ctrl-C to quit.");
+    // let mut fg = Figure::new();
+    // loop {
+    //     fg.clear_axes();
+    //     let x = Array::random((100, 1), Normal::new(0., 1.).unwrap());
+    //     let y = Array::random((100, 1), Normal::new(0., 1.).unwrap());
+    //     fg.axes2d()
+    //         .set_y_range(Fix(-3.0), Fix(3.0))
+    //         .set_x_range(Fix(-3.0), Fix(3.0))
+    //         .points(x.iter(), y.iter(), &[]);
+    //     fg.show().unwrap();
+    //     sleep(Duration::from_millis(50));
+    // }
+    let x = arr1(&[1., 2.]);
+    let A = arr2(&[[1., 2.], [3., 4.]]);
+    let B = arr2(&[[5., 11.], [4., 7.]]);
+    println!("{}", x.dot(&A.dot(&(B.dot(&x)))));
 }

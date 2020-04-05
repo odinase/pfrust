@@ -20,19 +20,22 @@ pub struct MeasurementModel {
 impl MeasurementModel {
     pub fn new(min: f64, max: f64, mode: f64, Ld: f64, Ll: f64, l: f64) -> Self {
         MeasurementModel {
-            noise_pdf: Triangular { min, max, mode },
+            noise_pdf: Triangular::new(min, max, mode),
             Ld,
             Ll,
             l,
         }
     }
-    fn evaluate(&self, state: &Array1<f64>) -> f64 {
+    pub fn evaluate(&self, state: &Array1<f64>) -> f64 {
         let theta = state[0];
         (self.Ld - self.l * theta.cos()).hypot(self.Ll - self.l * theta.sin())
     }
-    fn noise_density(&self, noise: f64) -> Result {
+    pub fn noise_density(&self, noise: f64) -> Result {
         self.noise_pdf.prob_density(&noise)
     }
+    pub fn sample(&self) -> f64 {
+        self.noise_pdf.sample()
+    } 
 }
 #[derive(Clone, Copy, Debug)]
 pub struct ProcessModel {
@@ -46,14 +49,14 @@ impl ProcessModel {
     pub fn new(g: f64, l: f64, d: f64, ts: f64) -> Self {
         ProcessModel { g, l, d, ts }
     }
-    fn continuous(&self, state: &Array1<f64>, input: &Array1<f64>) -> Array1<f64> {
+    pub fn continuous(&self, state: &Array1<f64>, input: &Array1<f64>) -> Array1<f64> {
         arr1(&[
             state[1],
             -self.d * state[1] - self.g / self.l * state[0].sin(),
         ]) + input
     }
     // Simple forward explicit Euler
-    fn discrete(&self, state: &Array1<f64>, input: &Array1<f64>) -> Array1<f64> {
+    pub fn discrete(&self, state: &Array1<f64>, input: &Array1<f64>) -> Array1<f64> {
         state + &(self.continuous(state, input) * self.ts)
     }
 }
