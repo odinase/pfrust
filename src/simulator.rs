@@ -62,12 +62,16 @@ where
         measurements.push(self.gen_measurement(&init_state));
         ground_truth.push(init_state);
         for i in 1..n {
+            let new_state : <P as particles::ProcessModel>::State;
+            let new_measurement : <M as particles::MeasurementModel>::Measurement;
             {
                 let curr_state = &ground_truth[i - 1];
                 let input = controller(curr_state);
-                ground_truth.push(self.propagate(curr_state, &input));
+                new_state = self.propagate(curr_state, &input);
+                new_measurement = self.gen_measurement(curr_state);
             }
-            measurements.push(self.gen_measurement(&ground_truth[i - 1]));
+            ground_truth.push(new_state);
+            measurements.push(new_measurement);
         }
         (ground_truth, measurements)
     }
