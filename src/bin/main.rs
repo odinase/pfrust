@@ -24,14 +24,21 @@ fn main() {
     let sim = Simulator::new(ppm, pmm);
     let n = 800;
     let (gt, m) = sim.run(init_state, controller, n);
-    let mut fg = Figure::new();
-    for p in gt {
-        fg.clear_axes();
-        fg.axes2d()
-            .set_y_range(Fix(-5.0), Fix(5.0))
-            .set_x_range(Fix(-5.0), Fix(5.0))
-            .points(arr0(l*p[0].cos()).iter(), arr0(l*p[0].sin()).iter(), &[]);
-        fg.show().unwrap();
-        sleep(Duration::from_millis(50));
-    }
+    // let mut fg = Figure::new();
+    // for p in &gt {
+    //     fg.clear_axes();
+    //     fg.axes2d()
+    //         .set_y_range(Fix(-5.0), Fix(5.0))
+    //         .set_x_range(Fix(-5.0), Fix(5.0))
+    //         .points(arr0(l*p[0].sin()).iter(), arr0(-l*p[0].cos()).iter(), &[]);
+    //     fg.show().unwrap();
+    //     sleep(Duration::from_millis(50));
+    // }
+    let mut fg1 = Figure::new();
+    fg1.axes2d()
+        .lines(0..n, gt.iter().map(|p| p[0]), &[]);
+    fg1.show().unwrap();
+        // let a = arr1(&[0., 0.]);
+        // let b: Array1<f64> = a.mapv(|x: f64| x.sin());
+        // println!("{:#?}", b);
 }
