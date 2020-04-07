@@ -1,63 +1,87 @@
-use super::Particle;
+use super::{MeasurementModel, Particle, ProcessModel};
 use crate::pdfs::{Pdf, Result, Triangular};
 use ndarray::prelude::*;
+use std::f64::consts::PI;
 #[derive(Clone, Debug)]
 pub struct PendulumParticle {
     weight: Option<f64>,
     state: Array1<f64>,
-    meas_model: MeasurementModel,
-    proc_model: ProcessModel,
+    meas_model: PendulumMeasurementModel,
+    proc_model: PendulumProcessModel,
 }
 
 // Assumes triangular pdf
 #[derive(Clone, Copy, Debug)]
-pub struct MeasurementModel {
+pub struct PendulumMeasurementModel {
     noise_pdf: Triangular,
-    Ld: f64,
-    Ll: f64,
+    ld: f64,
+    ll: f64,
     l: f64,
 }
-impl MeasurementModel {
-    pub fn new(min: f64, max: f64, mode: f64, Ld: f64, Ll: f64, l: f64) -> Self {
-        MeasurementModel {
+impl PendulumParticle {
+    pub fn new(
+        init_state: Array1<f64>,
+        meas_model: PendulumMeasurementModel,
+        proc_model: PendulumProcessModel,
+    ) -> Self {
+        PendulumParticle {
+            weight: None,
+            state: init_state,
+            meas_model,
+            proc_model,
+        }
+    }
+}
+impl PendulumMeasurementModel {
+    pub fn new(min: f64, max: f64, mode: f64, ld: f64, ll: f64, l: f64) -> Self {
+        PendulumMeasurementModel {
             noise_pdf: Triangular::new(min, max, mode),
-            Ld,
-            Ll,
+            ld,
+            ll,
             l,
         }
     }
-    pub fn evaluate(&self, state: &Array1<f64>) -> f64 {
+}
+impl MeasurementModel for PendulumMeasurementModel {
+    type State = Array1<f64>;
+    type Measurement = f64;
+    type Noise = f64;
+    fn evaluate(&self, state: &Array1<f64>) -> f64 {
         let theta = state[0];
-        (self.Ld - self.l * theta.cos()).hypot(self.Ll - self.l * theta.sin())
+        (self.ld - self.l * theta.cos()).hypot(self.ll - self.l * theta.sin())
     }
-    pub fn noise_density(&self, noise: f64) -> Result {
+    fn noise_density(&self, noise: f64) -> Result<f64> {
         self.noise_pdf.prob_density(&noise)
     }
-    pub fn sample(&self) -> f64 {
+    fn sample(&self) -> f64 {
         self.noise_pdf.sample()
-    } 
+    }
 }
 #[derive(Clone, Copy, Debug)]
-pub struct ProcessModel {
+pub struct PendulumProcessModel {
     g: f64,
     l: f64,
     d: f64,
     ts: f64,
 }
 
-impl ProcessModel {
+impl PendulumProcessModel {
     pub fn new(g: f64, l: f64, d: f64, ts: f64) -> Self {
-        ProcessModel { g, l, d, ts }
+        PendulumProcessModel { g, l, d, ts }
     }
-    pub fn continuous(&self, state: &Array1<f64>, input: &Array1<f64>) -> Array1<f64> {
+}
+impl ProcessModel for PendulumProcessModel {
+    type State = Array1<f64>;
+    type Input = Array1<f64>;
+    fn continuous(&self, state: &Array1<f64>, input: &Array1<f64>) -> Array1<f64> {
         arr1(&[
             state[1],
             -self.d * state[1] - self.g / self.l * state[0].sin(),
         ]) + input
     }
     // Simple forward explicit Euler
-    pub fn discrete(&self, state: &Array1<f64>, input: &Array1<f64>) -> Array1<f64> {
-        state + &(self.continuous(state, input) * self.ts)
+    fn discrete(&self, state: &Array1<f64>, input: &Array1<f64>) -> Array1<f64> {
+        modulo2pi(state + &(self.continuous(state, input) * self.ts))
     }
 }
 
@@ -86,17 +110,16 @@ impl Particle for PendulumParticle {
         &self.state
     }
 }
-impl PendulumParticle {
-    pub fn new(
-        init_state: Array1<f64>,
-        meas_model: MeasurementModel,
-        proc_model: ProcessModel,
-    ) -> Self {
-        PendulumParticle {
-            weight: None,
-            state: init_state,
-            meas_model,
-            proc_model,
-        }
+// Helpers
+fn modulo2pi(a: Array1<f64>) -> Array1<f64> {
+arr1(&[modulo(a[0] + PI, 2.*PI) - PI, a[1]])
+}
+fn modulo(lhs: f64, rhs: f64) -> f64 {
+    if rhs.signum() == 0.0 {
+        lhs
+    } else if lhs.signum()*rhs.signum() > 0.0 {
+        lhs % rhs
+    } else {
+        (lhs % rhs) + rhs
     }
 }

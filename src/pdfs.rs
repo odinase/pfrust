@@ -7,11 +7,11 @@ use rand_distr::{Distribution};
 use rand_distr;
 use rand::thread_rng;
 
-pub type Result = std::result::Result<f64, PdfError>;
+pub type Result<T> = std::result::Result<T, PdfError>;
 
-pub trait Pdf {
+pub trait Pdf<T> {
     type Realization;
-    fn prob_density(&self, x: &Self::Realization) -> Result;
+    fn prob_density(&self, x: &Self::Realization) -> Result<T>;
 }
 
 custom_error! {pub PdfError
@@ -20,7 +20,7 @@ custom_error! {pub PdfError
     InvalidBounds {min: f64, max: f64}  = "Invalid bounds of min {min} and max {max} used",
 }
 // Apparently, there are no multivariate Gaussian crates out there for Rust???
-pub fn multivariate_gauss_pdf(x: &Array1<f64>, mu: &Array1<f64>, sigma: &Array2<f64>) -> Result {
+pub fn multivariate_gauss_pdf(x: &Array1<f64>, mu: &Array1<f64>, sigma: &Array2<f64>) -> Result<f64> {
     let n = x.len() as f64;
     let y = x - mu;
     let q = y.dot(&sigma.solve(&y)?);
@@ -49,9 +49,9 @@ impl Triangular {
     }
 }
 
-impl Pdf for Triangular {   
+impl Pdf<f64> for Triangular {   
     type Realization = f64;
-    fn prob_density(&self, x: &f64) -> Result {
+    fn prob_density(&self, x: &f64) -> Result<f64> {
         let x = x.clone();
         if (self.max - self.min) < 1e-6 {
             return Err(PdfError::InvalidBounds { min: self.min, max: self.max });
