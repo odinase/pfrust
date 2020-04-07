@@ -36,7 +36,13 @@ fn main() {
     // }
     let mut fg1 = Figure::new();
     fg1.axes2d()
+        .set_pos_grid(2, 1, 0)
         .lines(0..n, gt.iter().map(|p| p[0]), &[]);
+    fg1.axes2d()
+        .set_pos_grid(2, 1, 1)
+        .lines(0..n, 0..n, &[]);
+    fg1.axes2d()
+        .set_grid_options(true, &[LineWidth(2.0), Color("black")]);
     fg1.show().unwrap();
         // let a = arr1(&[0., 0.]);
         // let b: Array1<f64> = a.mapv(|x: f64| x.sin());
