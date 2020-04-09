@@ -1,9 +1,12 @@
 use gnuplot::*;
 use ndarray::prelude::*;
-use pfrust::simulator::Simulator;
+use pfrust::particle_filter;
 use pfrust::particles::pendulum;
-use std::f64::consts::PI;
-// use ndarray_rand::rand_distr::Normal;
+use pfrust::particles::Particle;
+use pfrust::simulator::Simulator;
+use rand::thread_rng;
+use rand_distr::{Distribution, Uniform};
+use std::f64::consts::{FRAC_PI_2, FRAC_PI_4, PI};
 // use ndarray_rand::RandomExt;
 // use pfrust::particle_filter::ParticleFilter;
 // use pfrust::particles::pendulum;
@@ -15,36 +18,68 @@ use std::time::Duration;
 fn main() {
     // println!("This is a silly example of doing an animation... Ctrl-C to quit.");
     let init_state = arr1(&[PI / 2., -PI / 100.]);
-    let controller = |_ : &Array1<f64>| arr1(&[0., 0.]);
+    let controller = |_: &Array1<f64>| arr1(&[0., 0.]);
     let (min, max, mode) = (-0.25, 0.25, 0.0);
     let (ld, ll, l) = (4., 0., 1.);
-    let pmm = pendulum::PendulumMeasurementModel::new(min, max, mode, ld, ll, l);
     let (g, d, ts) = (9.81, 0., 0.05);
+    let pmm = pendulum::PendulumMeasurementModel::new(min, max, mode, ld, ll, l);
     let ppm = pendulum::PendulumProcessModel::new(g, l, d, ts);
     let sim = Simulator::new(ppm, pmm);
     let n = 800;
-    let (gt, m) = sim.run(init_state, controller, n);
-    // let mut fg = Figure::new();
+    let (ground_truth, measurements) = sim.run(init_state, controller, n);
+    // Initialize all particles
+    let num_particles = 10000;
+    let mut init_particles: Vec<pendulum::PendulumParticle> = Vec::with_capacity(num_particles);
+    let rand_ang_pos = Uniform::new(-FRAC_PI_2, FRAC_PI_2);
+    let rand_ang_vel = Uniform::new(0., FRAC_PI_4);
+    for _ in 0..num_particles {
+        let init_state = arr1(&[
+            rand_ang_pos.sample(&mut thread_rng()),
+            rand_ang_vel.sample(&mut thread_rng()),
+        ]);
+        let meas_model = pendulum::PendulumMeasurementModel::new(min, max, mode, ld, ll, l);
+        let proc_model = pendulum::PendulumProcessModel::new(g, l, d, ts);
+        init_particles.push(pendulum::PendulumParticle::new(
+            init_state, meas_model, proc_model,
+        ));
+    }
+    let mut pf = particle_filter::ParticleFilter::new(init_particles);
+    let mut fg = Figure::new();
+    for measurement in &measurements {
+        pf.predict(&arr1(&[0., 0.]));
+        pf.update(measurement);
+        fg.clear_axes();
+        fg.axes2d()
+            .set_y_range(Fix(-5.0), Fix(5.0))
+            .set_x_range(Fix(-5.0), Fix(5.0))
+            .points(
+                pf.get_particles().iter().map(|p| {
+                    let s = p.get_state();
+                    l * s[0].sin()
+                }),
+                pf.get_particles().iter().map(|p| {
+                    let s = p.get_state();
+                    -l * s[0].cos()
+                }),
+                &[]
+            );
+        fg.show().unwrap();
+        sleep(Duration::from_millis(50));
+    }
+    std::dbg!(pf);
     // for p in &gt {
-    //     fg.clear_axes();
-    //     fg.axes2d()
-    //         .set_y_range(Fix(-5.0), Fix(5.0))
-    //         .set_x_range(Fix(-5.0), Fix(5.0))
-    //         .points(arr0(l*p[0].sin()).iter(), arr0(-l*p[0].cos()).iter(), &[]);
-    //     fg.show().unwrap();
-    //     sleep(Duration::from_millis(50));
     // }
-    let mut fg1 = Figure::new();
-    fg1.axes2d()
-        .set_pos_grid(2, 1, 0)
-        .lines(0..n, gt.iter().map(|p| p[0]), &[]);
-    fg1.axes2d()
-        .set_pos_grid(2, 1, 1)
-        .lines(0..n, 0..n, &[]);
-    fg1.axes2d()
-        .set_grid_options(true, &[LineWidth(2.0), Color("black")]);
-    fg1.show().unwrap();
-        // let a = arr1(&[0., 0.]);
-        // let b: Array1<f64> = a.mapv(|x: f64| x.sin());
-        // println!("{:#?}", b);
+    // let mut fg1 = Figure::new();
+    // fg1.axes2d()
+    //     .set_pos_grid(2, 1, 0)
+    //     .lines(0..n, gt.iter().map(|p| p[0]), &[]);
+    // fg1.axes2d()
+    //     .set_pos_grid(2, 1, 1)
+    //     .lines(0..n, 0..n, &[]);
+    // fg1.axes2d()
+    //     .set_grid_options(true, &[LineWidth(2.0), Color("black")]);
+    // fg1.show().unwrap();
+    // let a = arr1(&[0., 0.]);
+    // let b: Array1<f64> = a.mapv(|x: f64| x.sin());
+    // println!("{:#?}", b);
 }
