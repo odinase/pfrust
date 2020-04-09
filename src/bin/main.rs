@@ -1,5 +1,5 @@
 use gnuplot::*;
-use ndarray::prelude::*;
+use ndarray::{prelude::*, s};
 use pfrust::particle_filter;
 use pfrust::particles::pendulum;
 use pfrust::particles::Particle;
@@ -16,7 +16,6 @@ use std::thread::sleep;
 use std::time::Duration;
 
 fn main() {
-    // println!("This is a silly example of doing an animation... Ctrl-C to quit.");
     let init_state = arr1(&[PI / 2., -PI / 100.]);
     let controller = |_: &Array1<f64>| arr1(&[0., 0.]);
     let (min, max, mode) = (-0.25, 0.25, 0.0);
@@ -28,7 +27,7 @@ fn main() {
     let n = 800;
     let (ground_truth, measurements) = sim.run(init_state, controller, n);
     // Initialize all particles
-    let num_particles = 10000;
+    let num_particles = 300;
     let mut init_particles: Vec<pendulum::PendulumParticle> = Vec::with_capacity(num_particles);
     let rand_ang_pos = Uniform::new(-FRAC_PI_2, FRAC_PI_2);
     let rand_ang_vel = Uniform::new(0., FRAC_PI_4);
@@ -45,41 +44,36 @@ fn main() {
     }
     let mut pf = particle_filter::ParticleFilter::new(init_particles);
     let mut fg = Figure::new();
-    for measurement in &measurements {
-        pf.predict(&arr1(&[0., 0.]));
+    for (i, measurement) in measurements.iter().enumerate() {
         pf.update(measurement);
         fg.clear_axes();
         fg.axes2d()
-            .set_y_range(Fix(-5.0), Fix(5.0))
-            .set_x_range(Fix(-5.0), Fix(5.0))
-            .points(
-                pf.get_particles().iter().map(|p| {
-                    let s = p.get_state();
-                    l * s[0].sin()
-                }),
-                pf.get_particles().iter().map(|p| {
-                    let s = p.get_state();
-                    -l * s[0].cos()
-                }),
-                &[]
-            );
+        .set_y_range(Fix(-l*1.5), Fix(l*1.5))
+        .set_x_range(Fix(-l*1.5), Fix(l*1.5))
+        .points(
+            pf.get_particles().iter().map(|p| {
+                let s = p.get_state();
+                l * s[0].sin()
+            }),
+            pf.get_particles().iter().map(|p| {
+                let s = p.get_state();
+                -l * s[0].cos()
+            }),
+            &[
+                Caption("Particles"),
+                PointSymbol('x'),
+            ]
+        )
+        .points(
+            ground_truth[i].slice(s![0]).mapv(|p| l*p.sin()).iter(),
+            ground_truth[i].slice(s![0]).mapv(|p| -l*p.cos()).iter(),      
+            &[
+                Caption("Ground truth"),
+                PointSymbol('O'),
+            ]
+        );
         fg.show().unwrap();
         sleep(Duration::from_millis(50));
+        pf.predict(&arr1(&[0., 0.]));
     }
-    std::dbg!(pf);
-    // for p in &gt {
-    // }
-    // let mut fg1 = Figure::new();
-    // fg1.axes2d()
-    //     .set_pos_grid(2, 1, 0)
-    //     .lines(0..n, gt.iter().map(|p| p[0]), &[]);
-    // fg1.axes2d()
-    //     .set_pos_grid(2, 1, 1)
-    //     .lines(0..n, 0..n, &[]);
-    // fg1.axes2d()
-    //     .set_grid_options(true, &[LineWidth(2.0), Color("black")]);
-    // fg1.show().unwrap();
-    // let a = arr1(&[0., 0.]);
-    // let b: Array1<f64> = a.mapv(|x: f64| x.sin());
-    // println!("{:#?}", b);
 }

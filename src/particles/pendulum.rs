@@ -94,8 +94,9 @@ impl Particle for PendulumParticle {
     }
     fn update(&mut self, measurement: &f64) {
         let meas_noise = measurement - &self.meas_model.evaluate(&self.state);
+        // std::dbg!(&meas_noise);
         let pdf_val = self.meas_model.noise_density(meas_noise).ok();
-        std::dbg!(&pdf_val);
+        // std::dbg!(&pdf_val);
         self.weight = match (self.weight, pdf_val) {
             (_, None) => Some(0.0),
             (_, Some(p)) => Some(p),

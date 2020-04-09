@@ -25,8 +25,8 @@ impl<P: particles::Particle + std::fmt::Debug> ParticleFilter<P> {
         for particle in &mut self.particles {
             particle.update(measurement);
         }
-        self.resample();
         self.normalize_weights();
+        self.resample();
     }
     pub fn get_particles<'a>(&'a self) -> &'a Vec<P> {
         &self.particles
@@ -60,7 +60,7 @@ impl<P: particles::Particle + std::fmt::Debug> ParticleFilter<P> {
                 Some(*cw)
             })
             .collect();
-        std::dbg!(&cumsum_weights);
+        // std::dbg!(&cumsum_weights);
         // if cumsum_weights[self.particles.len() - 1] == 0.0 {
         //     std::dbg!(&self.particles);
         //     panic!("Invalid cum!");
@@ -70,7 +70,7 @@ impl<P: particles::Particle + std::fmt::Debug> ParticleFilter<P> {
         let n = self.particles.len();
         let rand_noise: f64 = Uniform::new(0.0, 1.0).sample(&mut thread_rng());
         let u : Vec<f64> = (0..n).map(|x| (x as f64 + rand_noise) / n as f64).collect();
-        std::dbg!(&u);
+        // std::dbg!(&u);
         let (mut i, mut j) = (0, 0);
         let mut indices : Vec<usize> = vec![0; n];
         while i < n {
