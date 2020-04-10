@@ -22,7 +22,7 @@ fn main() {
     let n = 800;
     let (ground_truth, measurements) = sim.run(init_state, controller, n);
     // Initialize all particles
-    let num_particles = 5000;
+    let num_particles = 1_000;
     let mut init_particles: Vec<pendulum::PendulumParticle> = Vec::with_capacity(num_particles);
     let rand_ang_pos = Uniform::new(-FRAC_PI_2, FRAC_PI_2);
     let rand_ang_vel = Uniform::new(0., FRAC_PI_4);
@@ -62,7 +62,7 @@ fn main() {
                 &[Caption("Ground truth"), PointSymbol('O')],
             );
         fg.show().unwrap();
-        sleep(Duration::from_millis(50));
+        sleep(Duration::from_millis((ts*1e3) as u64));
         pf.predict(&arr1(&[0., 0.]));
     }
 }
