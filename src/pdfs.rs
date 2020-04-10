@@ -1,8 +1,7 @@
 use custom_error::custom_error;
-use ndarray::prelude::*;
 use ndarray_linalg::error::LinalgError;
-use ndarray_linalg::solve::{Determinant, Solve};
-use std::f64::consts::PI;
+// use ndarray_linalg::solve::{Determinant, Solve};
+// use std::f64::consts::PI;
 use rand_distr::{Distribution};
 use rand_distr;
 use rand::thread_rng;
@@ -20,13 +19,28 @@ custom_error! {pub PdfError
     InvalidBounds {min: f64, max: f64}  = "Invalid bounds of min {min} and max {max} used",
 }
 // Apparently, there are no multivariate Gaussian crates out there for Rust???
-pub fn multivariate_gauss_pdf(x: &Array1<f64>, mu: &Array1<f64>, sigma: &Array2<f64>) -> Result<f64> {
-    let n = x.len() as f64;
-    let y = x - mu;
-    let q = y.dot(&sigma.solve(&y)?);
-    let pdf_val = (2.0 * PI).powf(-n / 2.0) * sigma.det()?.powf(-0.5) * (-0.5 * q).exp();
-    Ok(pdf_val)
-}
+// pub fn multivariate_gauss_pdf(x: &Array1<f64>, mu: &Array1<f64>, sigma: &Array2<f64>) -> Result<f64> {
+//     let n = x.len() as f64;
+//     let y = x - mu;
+//     let q = y.dot(&sigma.solve(&y)?);
+//     let pdf_val = (2.0 * PI).powf(-n / 2.0) * sigma.det()?.powf(-0.5) * (-0.5 * q).exp();
+//     Ok(pdf_val)
+// }
+// #[derive(Clone, Debug)]
+// pub struct MultivariateGaussian {
+//     density: rand_distr::Normal<f64>,
+//     pub mean: Array1<f64>,
+//     pub std: Array2<f64>,
+// }
+// impl MultivariateGaussian {
+//     pub fn new(mean: f64, var: f64) -> Self {
+//         MultivariateGaussian {
+//             mean,
+//             var,
+//             density: rand_distr::Normal::new(mean, var)
+//         }
+//     }
+// }
 #[derive(Clone, Copy, Debug)]
 pub struct Triangular {
     density: rand_distr::Triangular<f64>,

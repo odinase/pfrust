@@ -40,18 +40,20 @@ impl<P: particles::Particle + std::fmt::Debug> ParticleFilter<P> {
         for particle in &mut self.particles {
             if let Some(w) = particle.get_weight() {
                 particle.set_weight(Some(w / total_weight));
+            } else {
+                particle.set_weight(Some(0.0));
             }
         }
     }
     fn initialize_weights(&mut self) {
         let n = self.particles.len() as f64;
         for particle in &mut self.particles {
-            particle.set_weight(Some(1.0/n));
+            particle.set_weight(Some(1.0 / n));
         }
     }
-    // Preform systematic resampling
+    // Perform systematic resampling
     fn resample(&mut self) {
-        let mut cumsum_weights: Vec<f64> = self
+        let cumsum_weights: Vec<f64> = self
             .particles
             .iter()
             .scan(0.0_f64, |cw, p| {
@@ -60,19 +62,11 @@ impl<P: particles::Particle + std::fmt::Debug> ParticleFilter<P> {
                 Some(*cw)
             })
             .collect();
-        // std::dbg!(&cumsum_weights);
-        // if cumsum_weights[self.particles.len() - 1] == 0.0 {
-        //     std::dbg!(&self.particles);
-        //     panic!("Invalid cum!");
-        // }
-        cumsum_weights[self.particles.len() - 1] = 1.0;
-        let cumsum_weights = cumsum_weights;
         let n = self.particles.len();
         let rand_noise: f64 = Uniform::new(0.0, 1.0).sample(&mut thread_rng());
-        let u : Vec<f64> = (0..n).map(|x| (x as f64 + rand_noise) / n as f64).collect();
-        // std::dbg!(&u);
+        let u: Vec<f64> = (0..n).map(|x| (x as f64 + rand_noise) / n as f64).collect();
         let (mut i, mut j) = (0, 0);
-        let mut indices : Vec<usize> = vec![0; n];
+        let mut indices: Vec<usize> = vec![0; n];
         while i < n {
             if u[i] < cumsum_weights[j] {
                 indices[i] = j;
@@ -81,12 +75,12 @@ impl<P: particles::Particle + std::fmt::Debug> ParticleFilter<P> {
                 j += 1;
             }
         }
-        // TODO: Is this slow?
-        self.particles = (0..n).map(|i| {
-            let mut p = self.particles[indices[i]].clone();
-            p.set_weight(Some(1. / n as f64));
-            p
-        }).collect();
-
+        self.particles = (0..n)
+            .map(|i| {
+                let mut p = self.particles[indices[i]].clone();
+                p.set_weight(Some(1. / n as f64));
+                p
+            })
+            .collect();
     }
 }

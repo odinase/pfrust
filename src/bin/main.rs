@@ -7,11 +7,6 @@ use pfrust::simulator::Simulator;
 use rand::thread_rng;
 use rand_distr::{Distribution, Uniform};
 use std::f64::consts::{FRAC_PI_2, FRAC_PI_4, PI};
-// use ndarray_rand::RandomExt;
-// use pfrust::particle_filter::ParticleFilter;
-// use pfrust::particles::pendulum;
-// use rosrust;
-// use rosrust_msg;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -27,7 +22,7 @@ fn main() {
     let n = 800;
     let (ground_truth, measurements) = sim.run(init_state, controller, n);
     // Initialize all particles
-    let num_particles = 300;
+    let num_particles = 5000;
     let mut init_particles: Vec<pendulum::PendulumParticle> = Vec::with_capacity(num_particles);
     let rand_ang_pos = Uniform::new(-FRAC_PI_2, FRAC_PI_2);
     let rand_ang_vel = Uniform::new(0., FRAC_PI_4);
@@ -48,30 +43,24 @@ fn main() {
         pf.update(measurement);
         fg.clear_axes();
         fg.axes2d()
-        .set_y_range(Fix(-l*1.5), Fix(l*1.5))
-        .set_x_range(Fix(-l*1.5), Fix(l*1.5))
-        .points(
-            pf.get_particles().iter().map(|p| {
-                let s = p.get_state();
-                l * s[0].sin()
-            }),
-            pf.get_particles().iter().map(|p| {
-                let s = p.get_state();
-                -l * s[0].cos()
-            }),
-            &[
-                Caption("Particles"),
-                PointSymbol('x'),
-            ]
-        )
-        .points(
-            ground_truth[i].slice(s![0]).mapv(|p| l*p.sin()).iter(),
-            ground_truth[i].slice(s![0]).mapv(|p| -l*p.cos()).iter(),      
-            &[
-                Caption("Ground truth"),
-                PointSymbol('O'),
-            ]
-        );
+            .set_y_range(Fix(-l * 1.5), Fix(l * 1.5))
+            .set_x_range(Fix(-l * 1.5), Fix(l * 1.5))
+            .points(
+                pf.get_particles().iter().map(|p| {
+                    let s = p.get_state();
+                    l * s[0].sin()
+                }),
+                pf.get_particles().iter().map(|p| {
+                    let s = p.get_state();
+                    -l * s[0].cos()
+                }),
+                &[Caption("Particles"), PointSymbol('x')],
+            )
+            .points(
+                ground_truth[i].slice(s![0]).mapv(|p| l * p.sin()).iter(),
+                ground_truth[i].slice(s![0]).mapv(|p| -l * p.cos()).iter(),
+                &[Caption("Ground truth"), PointSymbol('O')],
+            );
         fg.show().unwrap();
         sleep(Duration::from_millis(50));
         pf.predict(&arr1(&[0., 0.]));
